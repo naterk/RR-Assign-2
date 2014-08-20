@@ -1,0 +1,321 @@
+<link href="custom.css" rel="stylesheet">
+ 
+####Storm Type and the Impact on Population Health and Economic Damages
+
+<br>
+
+----
+
+####Synopsis
+
+<br>
+
+----
+
+####Data Processing
+
+The version of the U.S. National Oceanic and Atmospheric Administration (NOAA) [storm database][1] used in this analysis is available for download from the Coursera Reproducible Research course website. The database covers the years 1950 through 2011. Later versions of the database are available at the NOAA National Climatic Data Center [storm events database][2] site.
+
+The older source data used here has a number of format, data quality, and consistency issues that must be addressed before the data can be analyzed. The following data processing tasks are required:
+
+1. Retrieve the raw data from the course website.
+1. Decompress the data and read it into memory.
+1. Discard observations and variables not related to population health or economic damage.
+1. Fix data quality issues with order of magnitude indicators.
+1. Convert damage estimates to numeric values.
+1. Fix data quality issues with storm event type codes.
+1. Map storm event type codes to NOAA standard values.
+
+Each step is discussed in further detail, below.
+
+<br>
+
+#####Required libraries
+
+```{r RequiredLibraries, echo=TRUE}
+library(tools)
+library(plyr)
+```
+
+<br>
+
+#####Step 1: Retrieve the raw data from the course website.
+
+The raw data is stored in a single bzip2 compressed file available from the Reproducible Research course website at Coursera.  To conserve processing time, the data set is only downloaded if it is not already present locally. All data sets used in this analysis are stored in a data subdirectory.  This subdirectory is created, if it does not already exist. To recognize changes, a log entry is made each time the file is downloaded. The log entry includes a timestamp, the md5 checksum of the compressed data file, and the URL from which the file was downloaded.
+
+<br>
+
+```{r RetrieveRawData, echo=TRUE}
+##
+##  Define the URL and file pathnames for the data subdirectory, the source data
+##  file, and the log file.
+##
+f.url <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+f.dir <- "./data"
+f.dat <- paste0(f.dir,"/","StormData.csv.bz2")
+f.log <- paste0(f.dir,"/","StormData.log"    )
+
+##
+##  If the data subdirectory does not alreay exist, create it.
+##
+if(!file.exists(f.dir)) {
+    dir.create(f.dir)
+}
+    
+##
+##  If the data file is not already present locally, download the compressed file
+##  from the specified URL.  If the download fails, halt program execution and
+##  issue an error message.
+##
+if (!file.exists(f.dat)) {
+    if (download.file(url=f.url, destfile=f.dat, method="curl", quiet=TRUE)) {
+        stop("Unable to download data file.")
+    }
+    
+    ##
+    ##  Append an entry to the log file specifying the time when the data
+    ##  file was downloaded, the md5 checksum of the file, and the source
+    ##  URL.
+    ##
+    log.entry <- data.frame(Sys.time(),md5sum(f.dat), f.url)
+    write.table(log.entry, file=f.log, append=TRUE, row.names=FALSE, col.names=FALSE)
+}
+```
+
+<br>
+
+#####Step 2: Decompress the data and read it into memory.
+
+The source data is contained in a .csv file compressed with bzip2. It can be decompressed and read with the read.csv() function in R. Due to the size of the file, the read process can take several minutes to complete. To reduce processing time, the source data is cached in the R object `raw.storm`.
+
+<br>
+
+```{r DecompressAndReadData, echo=TRUE, cache=TRUE}
+##
+##  Uncompress and read the raw data file into memory.  The read.csv() function
+##  can uncompress bzip2 files.  Record the number of observations and variables
+##  in the raw data file.  These values are reported in the text of this document.
+##
+raw.storm <- read.csv(f.dat, stringsAsFactors=FALSE)
+raw.obs   <- nrow(raw.storm)
+raw.var   <- ncol(raw.storm)
+```
+
+<br>
+
+The raw source data set contains `r formatC(raw.obs, format="d", big.mark=",")` observations of `r formatC(raw.var, format="d", big.mark=",")` variables.
+
+<br>
+
+#####Step 3: Discard observations and variables not related to population health or economic damage.
+
+A large number of observations in the raw data set do not record either impacts on population health (fatalities and injuries) or economic damage (property damage or crop damage).  To speed up processing, these non-relevent observations are discarded from the source data set.  Similarly, variables not required for the analysis are discarded.  Variables that are retained for analysis include:
+
+<br>
+
+Variable    |  Description                                             |  Units              
+----------- | -------------------------------------------------------- | --------------------
+BGN_DATE    |  Date that the storm event began.                        |  mm/dd/yyyy 0:00:00 
+STATE       |  Two letter abbreviation for the US State or territory.  |  Character          
+EVTYPE      |  Code specifying the storm event type.                   |  Character          
+FATALITIES  |  Number of fatalities associated with the storm event.   |  Numeric            
+INJURIES    |  Number of injuries associated with the storm event.     |  Numeric            
+PROPDMG     |  Property damage estimate, base amount.                  |  Numeric            
+PROPDMGEXP  |  Power of 10 to be applied to PROPDMG.                   |  "B", "M", "K"      
+CROPDMG     |  Crop damage estimate, base amount.                      |  Numeric            
+CROPDMGEXP  |  Power of 10 to be applied to CROPDMG.                   |  "B", "M", "K"      
+
+To reduce processing time, the subsetted source data set is cached in the R object `src.storm`.
+
+<br>
+
+```{r DiscardObservations, echo=TRUE, cache=TRUE}
+##
+##  Subset the raw data keeping only observations with non-zero property or crop damage
+##  estimates or non-zero fatality or injury reports.  Keep only the variables specified
+##  in the table above.  Record the number of remaining observations and variables.  These
+##  values are reported in the text of this document.
+##
+src.storm <- subset(raw.storm,
+                    PROPDMG != 0 | CROPDMG != 0 | FATALITIES != 0 | INJURIES != 0,
+                    select=c(BGN_DATE, STATE, EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP))
+src.obs   <- nrow(src.storm)
+src.var   <- ncol(src.storm)
+```
+
+<br>
+
+The filtered source data set contains `r formatC(src.obs, format="d", big.mark=",")` observations of `r formatC(src.var, format="d", big.mark=",")` variables.
+
+<br>
+
+#####Step 4: Fix data quality issues with order of magnitude indicators.
+
+The economic consequences for a storm event are estimated for both property damage and crop damage. For each measurement, the data set records two values: a base amount and an exponent character representing the order of magnitude to be applied to the base amount. Allowable exponent values are "K" for thousands, "M" for millions, and "B" for billions (as the term is used in the United States). As an example the pair (1.423,"M") represents 1,423,000.  The pair (2.2,"B") represents 2,200,000,000.  All amounts are USD.
+
+Some damage amounts include other undefined characters in the exponent field--probably the result of data conversion errors. The following code determines the number of such entries in the data set and replaces any invalid exponent with NA so it can be excluded from further analysis.
+
+<br>
+
+```{r FixExponentErrors, echo=TRUE}
+##
+##  Construct a table of allowable exponent characters and their corresponding
+##  scale factor.  This table will be used in subsequent conversion calculations.
+##
+magnitudes          <- data.frame(c("B","M","K",""), c(10^9,10^6,10^3,10^0), stringsAsFactors=FALSE)
+names(magnitudes)   <- c("tag","multiplier")
+
+##
+##  Count the number of property damage entries for each exponent character in the
+##  data set.  Determine the number of observations that contain unallowable values.
+##  In the following code, 'prop' refers to property damage related fields.  Variables
+##  that include 'crop' refer to crop damage related fields.
+##
+prop.exp.tbl        <- ddply(src.storm, .(PROPDMGEXP), nrow)
+names(prop.exp.tbl) <- c("tag","count")
+bad.prop.exp.cnt    <- sum(prop.exp.tbl[!(prop.exp.tbl$tag %in% magnitudes$tag),"count"])
+
+##
+##  Count the number of crop damage entries for each exponent character in the
+##  data set.  Determine the number of observations that contain unallowable values.
+##
+crop.exp.tbl        <- ddply(src.storm, .(CROPDMGEXP), nrow)
+names(crop.exp.tbl) <- c("tag","count")
+bad.crop.exp.cnt    <- sum(crop.exp.tbl[!(crop.exp.tbl$tag %in% magnitudes$tag),"count"])
+
+##
+##  Create a list of invalid exponent codes in the property and crop damage
+##  variables.  These will be used in subsequent steps to identify rows
+##  to be ignored in the analysis.
+##
+bad.prop.tags <- sort(setdiff(unique(src.storm$PROPDMGEXP),magnitudes$tag))
+bad.crop.tags <- sort(setdiff(unique(src.storm$CROPDMGEXP),magnitudes$tag))
+
+##
+##  Replace invalid exponents with NA so they can subsequentally be excluded
+##  from processing.  Produce a map of all rows that include bad exponent
+##  values and then use the replace() function to replace them with NA.
+##
+bad.prop.rows        <- src.storm$PROPDMGEXP %in% bad.prop.tags
+src.storm$PROPDMGEXP <- replace(src.storm$PROPDMGEXP,bad.prop.rows,NA)
+bad.crop.rows        <- src.storm$CROPDMGEXP %in% bad.crop.tags
+src.storm$CROPDMGEXP <- replace(src.storm$CROPDMGEXP,bad.crop.rows,NA)
+```
+
+<br>
+
+Out of a total of `r formatC(src.obs, format="d", big.mark=",")` retained observations, `r formatC(bad.prop.exp.cnt, format="d", big.mark=",")` have invalid property damage exponent codes. This represents `r formatC(100 * bad.prop.exp.cnt / src.obs, format="f", big.mark=",")`% of all observations. Given the low percentage, these observations have been dropped from the analysis.
+
+For crop damage values, `r formatC(bad.crop.exp.cnt, format="d", big.mark=",")` have invalid exponent codes. This represents `r formatC(100 * bad.crop.exp.cnt / src.obs, format="f", big.mark=",")`% of all observations. Given the low percentage, these observations have also been dropped from the analysis.
+
+Invalid exponent codes found in the property damage fields include:  {`r bad.prop.tags`}.  These were replaced with NA.
+
+Invalid exponent codes found in the crop damage fields include:  {`r bad.crop.tags`}.  These were replaced with NA.
+
+It is likely that the lower case values "m" and "k" refer to millions and thousands, however they do not comply with the [Storm Data Preparation Guidelines][3], so they have been discarded.  Similarly, the codes "h" and "H" likely refer to hundreds, however these codes are also not defined in the NOAA procedures, so they have been discarded as well.
+
+<br>
+
+#####Step 5: Convert damage estimates to numeric values.
+
+
+
+<br>
+
+#####Step 6: Fix data quality issues with storm event type codes.
+
+The [Storm Data Preparation Guidelins][3] for the NOAA data set identify forty-eight storm event types. The source data, however, includes a large number of variations on these types as well as other invalid data.  The source data event types have to be cleaned-up and mapped to one of the NOAA values.
+
+<br>
+
+```{r FixEventTypes, echo=TRUE}
+##
+##  Some event type values are known to have leading and trailing spaces.
+##  These will have to be removed to prior to the creation of factors.
+##
+trim <- function(s) {
+    gsub("(^[[:space:]]+|[[:space:]]+$)", "", s)
+}
+
+##
+##  Create a sorted list of unique event types.  These will be used
+##  to map events to common values.  The source event types have any
+##  leading and trailing whitespace removed, all internal whitespace
+##  is converted to a single period, and all other non-alphanumeric
+##  characters are deleted.
+##
+f.event.type       <- paste0(f.dir,"/","eventtype.csv")
+
+src.storm$EVTYPE   <- trim(toupper(src.storm$EVTYPE))
+src.storm$EVTYPE   <- gsub("([[:punct:]]+)" , "." , src.storm$EVTYPE)
+src.storm$EVTYPE   <- gsub("([[:space:]]+)" , "." , src.storm$EVTYPE)
+src.storm$EVTYPE   <- gsub("([[:punct:]]+)" , "." , src.storm$EVTYPE)
+unique.event.types <-sort(unique(src.storm$EVTYPE))
+write.csv(unique.event.types,file=f.event.type,row.names=FALSE)
+```
+
+<br>
+
+#####Step 7: Map storm event type codes to NOAA standard values.
+
+The previous code produced a unique list of clean EVTYPE values and wrote them to an external .csv file.  The values in that file were mapped to one of the forty-eight NOAA storm event types based on the descriptions provided in the NOAA Storm Preparation Guidelines.  The mappings were saved to an external event mapping .csv file.  The code below uses this mapping file to append a new variable, `NOAA.Event` to the source data set.
+
+<br>
+
+```{r MapEventTypes, echo=TRUE}
+##
+##  Read the event mapping data and replace the source event types
+##  with the NOAA event types.
+##
+f.event.map <- paste0(f.dir,"/","eventmap.csv" )
+event.map   <- read.csv(f.event.map)
+src.storm   <- merge(src.storm, event.map, by.x="EVTYPE", by.y="Source.Event")
+```
+
+<br>
+
+There are `r length(unique.event.types)` distinct event types in the source data mapped to `r length(unique(event.map$NOAA.Event))` NOAA event categories.
+
+<br>
+
+----
+
+####Results
+
+<br>
+
+#####Storm events most harmful with respect to population health
+
+Some options to consider.  Combine fatalities and injuries into a single value and show the top ten overall impact.  Make a data frame that includes the total fatalities, injuries for each NOAA.Event type.  Plot a stacked bar chart showing the combined effect.  Plot the mix by year to account for the fact that the early data did not record all categories.
+
+<br>
+
+```{r PopulationImpactCounts, echo=TRUE}
+fatalities.sum <- ddply(src.storm, .(NOAA.Event), summarize, total.fatalities=sum(FATALITIES))
+injuries.sum   <- ddply(src.storm, .(NOAA.Event), summarize, total.injuries=sum(INJURIES))
+fatalities.sum <- fatalities.sum[order(-fatalities.sum$total.fatalities),]
+injuries.sum   <- injuries.sum  [order(-injuries.sum$total.injuries    ),]
+print.data.frame(fatalities.sum[1:10,], row.names=FALSE)
+print.data.frame(injuries.sum  [1:10,], row.names=FALSE)
+```
+
+
+<br>
+
+----
+
+####References
+
+<br>
+
+----
+
+####Environment
+
+<br>
+
+[1]: https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2 "Storm Data"
+[2]: http://www.ncdc.noaa.gov/stormevents/ "National Climatic Data Center Storm Events Database"
+[3]: https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf "Storm Data Documentation"
+[4]: https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2FNCDC%20Storm%20Events-FAQ%20Page.pdf "FAQ"
+[5]: http://rpubs.com/ "RPubs.com"

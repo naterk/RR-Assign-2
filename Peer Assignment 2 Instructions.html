@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+<title></title>
+
+
+
+
+
+<style type="text/css">
+body, td {
+   font-family: sans-serif;
+   background-color: white;
+   font-size: 13px;
+}
+
+body {
+  max-width: 800px;
+  margin: auto;
+  padding: 1em;
+  line-height: 20px;
+}
+
+tt, code, pre {
+   font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;
+}
+
+h1 {
+   font-size:2.2em;
+}
+
+h2 {
+   font-size:1.8em;
+}
+
+h3 {
+   font-size:1.4em;
+}
+
+h4 {
+   font-size:1.0em;
+}
+
+h5 {
+   font-size:0.9em;
+}
+
+h6 {
+   font-size:0.8em;
+}
+
+a:visited {
+   color: rgb(50%, 0%, 50%);
+}
+
+pre, img {
+  max-width: 100%;
+}
+
+pre code {
+   display: block; padding: 0.5em;
+}
+
+code {
+  font-size: 92%;
+  border: 1px solid #ccc;
+}
+
+code[class] {
+  background-color: #F8F8F8;
+}
+
+table, td, th {
+  border: none;
+}
+
+blockquote {
+   color:#666666;
+   margin:0;
+   padding-left: 1em;
+   border-left: 0.5em #EEE solid;
+}
+
+hr {
+   height: 0px;
+   border-bottom: none;
+   border-top-width: thin;
+   border-top-style: dotted;
+   border-top-color: #999999;
+}
+
+@media print {
+   * {
+      background: transparent !important;
+      color: black !important;
+      filter:none !important;
+      -ms-filter: none !important;
+   }
+
+   body {
+      font-size:12pt;
+      max-width:100%;
+   }
+
+   a, a:visited {
+      text-decoration: underline;
+   }
+
+   hr {
+      visibility: hidden;
+      page-break-before: always;
+   }
+
+   pre, blockquote {
+      padding-right: 1em;
+      page-break-inside: avoid;
+   }
+
+   tr, img {
+      page-break-inside: avoid;
+   }
+
+   img {
+      max-width: 100% !important;
+   }
+
+   @page :left {
+      margin: 15mm 20mm 15mm 10mm;
+   }
+
+   @page :right {
+      margin: 15mm 10mm 15mm 20mm;
+   }
+
+   p, h2, h3 {
+      orphans: 3; widows: 3;
+   }
+
+   h2, h3 {
+      page-break-after: avoid;
+   }
+}
+</style>
+
+
+
+</head>
+
+<body>
+<p>###Introduction</p>
+
+<p>Storms and other severe weather events can cause both public health and economic problems for communities and municipalities. Many severe events can result in fatalities, injuries, and property damage, and preventing such outcomes to the extent possible is a key concern.</p>
+
+<p>This project involves exploring the U.S. National Oceanic and Atmospheric Administration&#39;s (NOAA) storm database. This database tracks characteristics of major storms and weather events in the United States, including when and where they occur, as well as estimates of any fatalities, injuries, and property damage.</p>
+
+<p>###Data</p>
+
+<p>The data for this assignment come in the form of a comma-separated-value file compressed via the bzip2 algorithm to reduce its size. You can download the file from the course web site:</p>
+
+<ul>
+<li><p><a href="https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2" title="Storm Data">Storm Data</a> [47Mb]
+There is also some documentation of the database available. Here you will find how some of the variables are constructed/defined.</p></li>
+<li><p>National Weather Service <a href="https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf" title="Storm Data Documentation">Storm Data Documentation</a></p></li>
+<li><p>National Climatic Data Center Storm Events <a href="https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2FNCDC%20Storm%20Events-FAQ%20Page.pdf" title="FAQ">FAQ</a></p></li>
+</ul>
+
+<p>The events in the database start in the year 1950 and end in November 2011. In the earlier years of the database there are generally fewer events recorded, most likely due to a lack of good records. More recent years should be considered more complete.</p>
+
+<p>###Assignment</p>
+
+<p>The basic goal of this assignment is to explore the NOAA Storm Database and answer some basic questions about severe weather events. You must use the database to answer the questions below and show the code for your entire analysis. Your analysis can consist of tables, figures, or other summaries. You may use any R package you want to support your analysis.</p>
+
+<p>####Questions</p>
+
+<p>Your data analysis must address the following questions:</p>
+
+<ol>
+<li><p>Across the United States, which types of events (as indicated in the <code>EVTYPE</code> variable) are most harmful with respect to population health?</p></li>
+<li><p>Across the United States, which types of events have the greatest economic consequences?</p></li>
+</ol>
+
+<p>Consider writing your report as if it were to be read by a government or municipal manager who might be responsible for preparing for severe weather events and will need to prioritize resources for different types of events. However, there is no need to make any specific recommendations in your report.</p>
+
+<p>####Requirements</p>
+
+<p>For this assignment you will need some specific tools</p>
+
+<ul>
+<li><p>RStudio: You will need RStudio to publish your completed analysis document to RPubs. You can also use RStudio to edit/write your analysis.</p></li>
+<li><p>knitr: You will need the knitr package in order to compile your R Markdown document and convert it to HTML</p></li>
+</ul>
+
+<p>####Document Layout</p>
+
+<ul>
+<li><p>Language: Your document should be written in English.</p></li>
+<li><p>Title: Your document should have a title that <strong>briefly</strong> summarizes your data analysis</p></li>
+<li><p>Synopsis: Immediately after the title, there should be a <strong>synopsis</strong> which describes and summarizes your analysis in <strong>at most 10 complete sentences</strong>.</p></li>
+<li><p>There should be a section titled <strong>Data Processing</strong> which describes (in words and code) how the data were loaded into R and processed for analysis. In particular, your analysis must start from the raw CSV file containing the data. You cannot do any preprocessing outside the document. If preprocessing is time-consuming you may consider using the <code>cache = TRUE</code> option for certain code chunks.</p></li>
+<li><p>There should be a section titled <strong>Results</strong> in which your results are presented.</p></li>
+<li><p>You may have other sections in your analysis, but Data Processing and Results are <strong>required</strong>.</p></li>
+<li><p>The analysis document must have <strong>at least one figure containing a plot</strong>.</p></li>
+<li><p>Your analyis must have <strong>no more than three figures</strong>. Figures may have multiple plots in them (i.e. panel plots), but there cannot be more than three figures total.</p></li>
+<li><p>You must show all your code for the work in your analysis document. This may make the document a bit verbose, but that is okay. In general, you should ensure that <code>echo = TRUE</code> for every code chunk (this is the default setting in knitr).</p></li>
+</ul>
+
+<p>####Publishing Your Analysis</p>
+
+<p>For this assignment you will need to publish your analysis on [RPubs.com][4. If you do not already have an account, then you will have to create a new account. After you have completed writing your analysis in RStudio, you can publish it to RPubs by doing the following:</p>
+
+<ol>
+<li><p>In RStudio, make sure your R Markdown document (.Rmd) document is loaded in the editor</p></li>
+<li><p>Click the Knit HTML button in the doc toolbar to preview your document.</p></li>
+<li><p>In the preview window, click the Publish button.</p></li>
+</ol>
+
+<p>Once your document is published to RPubs, you should get a unique URL to that document. <strong>Make a note of this URL</strong> as you will need it to submit your assignment.</p>
+
+<p><strong>NOTE:</strong> If you are having trouble connecting with RPubs due to proxy-related or other issues, you can upload your final analysis document file as a PDF to Coursera instead.</p>
+
+<p>####Submitting Your Assignment</p>
+
+<p>In order to submit this assignment, you must copy the RPubs URL for your completed data analysis document in to the peer assessment question.</p>
+
+</body>
+
+</html>
